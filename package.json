@@ -1,0 +1,53 @@
+{
+	"name": "@dayone/evolutions",
+	"version": "1.0.0",
+	"description": "Evolutionary database migrations for PostgreSQL",
+	"main": "lib/index.js",
+	"types": "lib/index.d.ts",
+	"bin": {
+		"evolutions": "lib/cli.js"
+	},
+	"files": [
+		"lib"
+	],
+	"repository": "https://github.com/marekpiechut/pgqueue/packages/evolutions",
+	"author": {
+		"email": "marek@dayone.pl",
+		"name": "Marek Piechut",
+		"url": "https://marekpiechut.github.io"
+	},
+	"license": "MIT",
+	"engines": {
+		"node": ">= 18"
+	},
+	"type": "module",
+	"private": true,
+	"scripts": {
+		"build": "tsc",
+		"start": "tsc -w",
+		"clean": "shx rm -rf ./lib",
+		"typecheck": "tsc --noEmit",
+		"lint": "eslint --ext .ts --max-warnings 0 src/**",
+		"validate": "yarn lint && yarn typecheck"
+	},
+	"peerDependencies": {
+		"pg": ">=7.4.0"
+	},
+	"devDependencies": {
+		"@types/node": "^18.11.9",
+		"@types/pg": "^8.11.0",
+		"@typescript-eslint/eslint-plugin": "^7.0.1",
+		"@typescript-eslint/parser": "^7.0.1",
+		"eslint": "^8.56.0",
+		"eslint-config-prettier": "^9.1.0",
+		"eslint-plugin-import": "^2.29.1",
+		"eslint-plugin-prettier": "^5.1.3",
+		"husky": "^9.0.10",
+		"prettier": "^3.2.5",
+		"shx": "^0.3.4",
+		"typescript": "^5.3.3"
+	},
+	"dependencies": {
+		"commander": "^12.0.0"
+	}
+}
