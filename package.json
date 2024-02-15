@@ -1,6 +1,6 @@
 {
-	"name": "@dayone/evolutions",
-	"version": "1.0.0",
+	"name": "@dayone-labs/evolutions",
+	"version": "0.1.0",
 	"description": "Evolutionary database migrations for PostgreSQL",
 	"main": "lib/index.js",
 	"types": "lib/index.d.ts",
@@ -10,7 +10,10 @@
 	"files": [
 		"lib"
 	],
-	"repository": "https://github.com/marekpiechut/pgqueue/packages/evolutions",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/dayone-labs/evolutions.git"
+	},
 	"author": {
 		"email": "marek@dayone.pl",
 		"name": "Marek Piechut",
@@ -21,7 +24,6 @@
 		"node": ">= 18"
 	},
 	"type": "module",
-	"private": true,
 	"scripts": {
 		"build": "tsc",
 		"start": "tsc -w",
