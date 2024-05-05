@@ -3,6 +3,8 @@ import fs from 'node:fs'
 import readline from 'node:readline'
 import pg from 'pg'
 import schemaSql from './schema.sql.js'
+import { Readable, Stream } from 'stream'
+import path from 'path'
 
 export type EvolutionExpression = string
 
@@ -36,14 +38,23 @@ export const load = async (
 }
 
 export const loadFromFiles = async (
-	folder: string,
+	filesOrFolder: string | string[],
 	client: pg.ClientBase,
 	config?: Config
 ): Promise<Evolutions> => {
-	const files = await fs.promises.readdir(folder)
+	let files
+	if (typeof filesOrFolder === 'string') {
+		files = await fs.promises.readdir(filesOrFolder)
+		files = files.map(f => path.join(filesOrFolder, f))
+	} else {
+		files = filesOrFolder
+	}
 	const sqls = files.filter(f => f.endsWith('.sql')).sort()
 	const parsed = await Promise.all(
-		sqls.map(file => parseSqlFile(`${folder}/${file}`))
+		sqls.map(file => {
+			const stream = fs.createReadStream(file, 'utf-8')
+			return parseSqlFile(stream)
+		})
 	)
 	const evolutions = await loadEvolutions(parsed)
 	return new Evolutions(client, evolutions, config)
@@ -257,9 +268,8 @@ export class Evolutions {
 	}
 }
 
-const parseSqlFile = (file: string): Promise<Evolution> => {
+const parseSqlFile = (stream: Readable): Promise<Evolution> => {
 	return new Promise((resolve, reject) => {
-		const stream = fs.createReadStream(file, 'utf-8')
 		const reader = readline.createInterface({ input: stream })
 		const ups: EvolutionExpression[] = []
 		const downs: EvolutionExpression[] = []
