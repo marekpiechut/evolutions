@@ -1,10 +1,10 @@
 import crypto from 'crypto'
 import fs from 'node:fs'
 import readline from 'node:readline'
-import pg from 'pg'
-import schemaSql from './schema.sql.js'
-import { Readable, Stream } from 'stream'
 import path from 'path'
+import pg from 'pg'
+import { Readable } from 'stream'
+import schemaSql from './schema.sql.js'
 
 export type EvolutionExpression = string
 
@@ -64,7 +64,7 @@ export type Logger = {
 	debug: (msg: string, ...args: unknown[]) => void
 	info: (msg: string, ...args: unknown[]) => void
 	warn: (msg: string, ...args: unknown[]) => void
-	error: (msg: string, ...args: unknown[]) => void
+	error: (error: unknown, msg: string, ...args: unknown[]) => void
 }
 
 export class Evolutions {
