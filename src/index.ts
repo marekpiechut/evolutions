@@ -11,6 +11,7 @@ export type EvolutionExpression = string
 export type Config = {
 	schema?: string
 	allowDown?: boolean
+	ignoreDown?: boolean
 }
 
 export const DEFAULT_CONFIG = {
@@ -111,6 +112,10 @@ export class Evolutions {
 					'!!! WARNING !!! Database has down migrations. This will DESTROY YOUR DATA!'
 				)
 				await this.applyDown()
+			} else if (this.config.ignoreDown) {
+				this.logger.warn(
+					'!!! WARNING !!! Database has down migrations. Ignoring them.'
+				)
 			} else {
 				throw Error(
 					'Database has down migrations. For development use `allowDown` option to apply them. NEVER USE FOR PRODUCTION!'
