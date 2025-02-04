@@ -106,6 +106,14 @@ export class Evolutions {
 			this.logger.info('Schema created')
 		}
 
+		const current = await this.getCurrent()
+		this.logger.info(
+			`Current version: ${current?.version || 0} (${current?.checksum})`
+		)
+		this.logger.info(
+			`Requested version: ${this.evolutions.length} (${this.evolutions[this.evolutions.length - 1]?.checksum})`
+		)
+
 		if (hasSchema && (await this.hasDown())) {
 			if (this.config.allowDown) {
 				this.logger.warn(
@@ -124,9 +132,9 @@ export class Evolutions {
 		}
 
 		await this.applyUp()
-		const current = await this.getCurrent()
+		const currentAfter = await this.getCurrent()
 		this.logger.info(
-			`Evolutions applied, database is up to date. Version: ${current?.version || 0}`
+			`Evolutions applied, database is up to date. Version: ${currentAfter?.version || 0}, Checksum: ${currentAfter?.checksum}`
 		)
 	}
 
