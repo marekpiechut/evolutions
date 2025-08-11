@@ -1,4 +1,4 @@
-import { Config, EvolutionExpression } from './index.js'
+import { Config, EvolutionExpression } from './models.js'
 
 export default (config: Config): EvolutionExpression[] => [
 	`CREATE SCHEMA IF NOT EXISTS ${config.schema}`,
