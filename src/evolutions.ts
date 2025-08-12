@@ -6,7 +6,7 @@ import {
 	LoadedEvolution,
 	Logger,
 } from './models.js'
-
+import { consoleLogger } from './utils.js'
 import schemaSql from './schema.sql.js'
 
 export class Evolutions {
@@ -19,7 +19,7 @@ export class Evolutions {
 		logger?: Logger
 	) {
 		this.config = { ...DEFAULT_CONFIG, ...config }
-		this.logger = logger || console
+		this.logger = logger || consoleLogger
 	}
 
 	public async hasDown(): Promise<boolean> {
@@ -30,39 +30,44 @@ export class Evolutions {
 		if (!current) return false
 
 		const expected = this.evolutions[current.version - 1]
+		const last = this.evolutions[this.evolutions.length - 1]
 
-		const needsDowngrade = current.version > expected.version
-		const checksumMismatch = current.checksum !== expected.checksum
+		const needsDowngrade = current.version > last?.version
+		const checksumMismatch = current.checksum !== expected?.checksum
 
 		return needsDowngrade || checksumMismatch
 	}
 
 	public async apply(): Promise<void> {
-		this.logger.info(`Applying evolutions into ${this.config.schema} schema`)
+		this.logger('INFO', `Applying evolutions into ${this.config.schema} schema`)
 		const hasSchema = await this.hasSchema()
 
 		if (!hasSchema) {
-			this.logger.info('Creating evolutions schema')
+			this.logger('INFO', 'Creating evolutions schema')
 			await this.createSchema()
-			this.logger.info('Schema created')
+			this.logger('INFO', 'Schema created')
 		}
 
 		const current = await this.getCurrent()
-		this.logger.info(
+		this.logger(
+			'INFO',
 			`Current version: ${current?.version || 0} (${current?.checksum})`
 		)
-		this.logger.info(
+		this.logger(
+			'INFO',
 			`Requested version: ${this.evolutions.length} (${this.evolutions[this.evolutions.length - 1]?.checksum})`
 		)
 
 		if (hasSchema && (await this.hasDown())) {
 			if (this.config.allowDown) {
-				this.logger.warn(
+				this.logger(
+					'WARN',
 					'!!! WARNING !!! Database has down migrations. This will DESTROY YOUR DATA!'
 				)
 				await this.applyDown()
 			} else if (this.config.ignoreDown) {
-				this.logger.warn(
+				this.logger(
+					'WARN',
 					'!!! WARNING !!! Database has down migrations. Ignoring them.'
 				)
 			} else {
@@ -74,7 +79,8 @@ export class Evolutions {
 
 		await this.applyUp()
 		const currentAfter = await this.getCurrent()
-		this.logger.info(
+		this.logger(
+			'INFO',
 			`Evolutions applied, database is up to date. Version: ${currentAfter?.version || 0}, Checksum: ${currentAfter?.checksum}`
 		)
 	}
@@ -95,14 +101,17 @@ export class Evolutions {
 			current = await this.getCurrent()
 		}
 
-		this.logger.info(`Downgraded database to version ${current?.version || 0}`)
+		this.logger(
+			'INFO',
+			`Downgraded database to version ${current?.version || 0}`
+		)
 	}
 
 	private async createSchema(): Promise<{ version: number }> {
 		const sqls = schemaSql(this.config)
 		await this.client.query(`BEGIN;`)
 		for (const up of sqls) {
-			this.logger.debug(up)
+			this.logger('DEBUG', up)
 			await this.client.query(up)
 		}
 		await this.client.query('COMMIT;')
@@ -117,7 +126,7 @@ export class Evolutions {
 			if (!expected || current.checksum !== expected.checksum) {
 				this.downgrade(current)
 			} else {
-				this.logger.info('All down migrations applied')
+				this.logger('INFO', 'All down migrations applied')
 				return
 			}
 			current = await this.getCurrent()
@@ -125,7 +134,10 @@ export class Evolutions {
 	}
 
 	private async downgrade(current: LoadedEvolution): Promise<void> {
-		this.logger.warn(`Downgrading database to version ${current.version - 1}`)
+		this.logger(
+			'WARN',
+			`Downgrading database to version ${current.version - 1}`
+		)
 		const downs = current.downs
 		await this.client.query(`BEGIN;`)
 		try {
@@ -143,7 +155,8 @@ export class Evolutions {
 	private async applyUp(): Promise<void> {
 		const current = await this.getCurrent()
 		if (current == null) {
-			this.logger.warn(
+			this.logger(
+				'WARN',
 				`No version in schema ${this.config.schema}. Assuming no data.`
 			)
 		}
@@ -151,7 +164,7 @@ export class Evolutions {
 		const currentVersion = current ? current.version : 0
 		const toApply = this.evolutions.slice(currentVersion)
 		for (const evo of toApply) {
-			this.logger.info(`Applying up migration ${evo.version}`)
+			this.logger('INFO', `Applying up migration ${evo.version}`)
 			await this.client.query(`BEGIN;`)
 			try {
 				await this.applySingle(evo.ups)
@@ -165,9 +178,9 @@ export class Evolutions {
 	}
 
 	private async applySingle(sqls: EvolutionExpression[]): Promise<void> {
-		for (const up of sqls) {
-			this.logger.debug(up)
-			await this.client.query(up)
+		for (const sql of sqls) {
+			this.logger('DEBUG', sql)
+			await this.client.query(sql)
 		}
 	}
 

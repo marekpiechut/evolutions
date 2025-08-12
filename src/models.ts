@@ -1,9 +1,5 @@
-export type Logger = {
-	debug: (msg: string, ...args: unknown[]) => void
-	info: (msg: string, ...args: unknown[]) => void
-	warn: (msg: string, ...args: unknown[]) => void
-	error: (error: unknown, msg: string, ...args: unknown[]) => void
-}
+type LogLevel = 'INFO' | 'DEBUG' | 'WARN' | 'ERROR'
+export type Logger = (level: LogLevel, msg: string, ...args: unknown[]) => void
 
 export type Config = {
 	schema?: string
