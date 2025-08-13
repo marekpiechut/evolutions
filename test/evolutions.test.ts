@@ -39,7 +39,7 @@ describe('down evolutions', () => {
 		assert.equal(await evolutions.hasDown(), true)
 	})
 
-	test('has down if current db has more evolutions than provided', async () => {
+	test('has no down if current db has more evolutions than provided', async () => {
 		const sqls = mockEvolutions(db, 4)
 
 		const evolutions = new Evolutions(
@@ -48,19 +48,14 @@ describe('down evolutions', () => {
 			config,
 			logger
 		)
-		assert.equal(await evolutions.hasDown(), true)
+		assert.equal(await evolutions.hasDown(), false)
 	})
 
 	test('does not execute down evolutions if config.allowDown is not true', async () => {
 		const sqls = mockEvolutions(db, 3)
 
 		sqls[2].checksum = '__CHECKSUM_MISMATCH__'
-		const evolutions = new Evolutions(
-			new pg.Client(),
-			sqls.slice(0, 3),
-			config,
-			logger
-		)
+		const evolutions = new Evolutions(new pg.Client(), sqls, config, logger)
 		assert.equal(await evolutions.hasDown(), true)
 
 		assert.rejects(() => evolutions.apply(), /Database has down migrations/)
@@ -78,9 +73,10 @@ describe('down evolutions', () => {
 	test('executes down migration if allowed in config', async () => {
 		const sqls = mockEvolutions(db, 3)
 
+		sqls[2].checksum = '__CHECKSUM_MISMATCH__'
 		const evolutions = new Evolutions(
 			new pg.Client(),
-			sqls.slice(0, 2),
+			sqls,
 			{
 				...config,
 				allowDown: true,
@@ -94,7 +90,8 @@ describe('down evolutions', () => {
 		await evolutions.apply()
 
 		const updated = await evolutions.getCurrent()
-		assert.equal(updated?.version, 2)
+		assert.equal(updated?.version, 3)
+		assert.equal(updated?.checksum, '__CHECKSUM_MISMATCH__')
 	})
 
 	test('executes downTo if allowed in config', async () => {
@@ -145,10 +142,12 @@ describe('down evolutions', () => {
 
 	test('does not execute down migrations if down is ignored', async () => {
 		const sqls = mockEvolutions(db, 3)
+		const originalChecksum = sqls[2].checksum
 
+		sqls[2].checksum = '__CHECKSUM_MISMATCH__'
 		const evolutions = new Evolutions(
 			new pg.Client(),
-			sqls.slice(0, 2),
+			sqls,
 			{
 				...config,
 				ignoreDown: true,
@@ -163,7 +162,7 @@ describe('down evolutions', () => {
 
 		const updated = await evolutions.getCurrent()
 		assert.equal(updated?.version, 3)
-		assert.equal(updated?.checksum, sqls[2].checksum)
+		assert.equal(updated?.checksum, originalChecksum)
 	})
 
 	test('does not execute down migrations but executes up if down is ignored', async () => {

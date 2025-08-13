@@ -29,13 +29,15 @@ export class Evolutions {
 		const current = await this.getCurrent()
 		if (!current) return false
 
-		const expected = this.evolutions[current.version - 1]
-		const last = this.evolutions[this.evolutions.length - 1]
+		if (current.version > this.evolutions.length) {
+			//Running old version of app missing some recent migrations?
+			return false
+		}
 
-		const needsDowngrade = current.version > last?.version
-		const checksumMismatch = current.checksum !== expected?.checksum
+		const expectedCurrent = this.evolutions[current.version - 1]
+		const checksumMismatch = current.checksum !== expectedCurrent?.checksum
 
-		return needsDowngrade || checksumMismatch
+		return checksumMismatch
 	}
 
 	public async apply(): Promise<void> {
